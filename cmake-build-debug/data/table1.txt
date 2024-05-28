@@ -1,0 +1,6 @@
+imie nazwisko wiek 
+Jacek Nowak 12 
+Jacek Nowak 12 
+Jacek Nowak 15
+Maria Lis 19 
+Anna Ptak 20 

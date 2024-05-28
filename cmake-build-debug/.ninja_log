@@ -1,0 +1,11 @@
+# ninja log v5
+6673	7423	7273824302459125	_deps/fmt-build/libfmtd.a	bd357bc7847c03fb
+4	1389	7274893679305033	CMakeFiles/baza.dir/main.cpp.obj	329f4dc25cf9864c
+2	960	7274896163369163	build.ninja	7100e58b65e490e6
+19	6134	7273824289501758	_deps/fmt-build/CMakeFiles/fmt.dir/src/format.cc.obj	52ffe4b5894de23b
+9	6671	7273824294955265	_deps/fmt-build/CMakeFiles/fmt.dir/src/os.cc.obj	52447224ddfc3f15
+1390	1644	7274893681846056	baza.exe	c3aaffa30661993d
+4	6231	7274896272914173	CMakeFiles/baza.dir/main.cpp.obj	db5591c6b720c972
+6233	6982	7274896280407743	baza.exe	c3aaffa30661993d
+5	4879	7274897164500155	CMakeFiles/baza.dir/main.cpp.obj	db5591c6b720c972
+4890	5576	7274897171428866	baza.exe	c3aaffa30661993d

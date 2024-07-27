@@ -118,6 +118,17 @@ public:
     std::vector<Where> wheres;
 };
 
+class Drop  {
+public:
+    Drop (const std::vector<std::string> &colums, const std::string &tableName, const std::vector<Where> &wheres)
+            : colums(colums), table_name(tableName), wheres(wheres) {}
+
+    std::vector<std::string> colums;
+    std::string table_name;
+    std::vector<Where> wheres;
+
+};
+
 class Table {
 public:
     Table(const std::string &name, const std::vector<std::string> &columns,
@@ -193,7 +204,9 @@ TableDefinition parse_create(const std::vector<std::string> &words);
 
 Insert parse_insert(const std::vector<std::string> &words);
 
-Update parse_update(std::vector<std::string> words);
+Update parse_update(std::vector<std::string> &words);
+
+Drop parse_drop(const std::vector<std::string> &words);
 
 bool resolve_wheres(const std::vector<Where> &wheres, Table data_table, TableDefinition td, int current_row);
 
@@ -565,4 +578,42 @@ Update parse_update(std::vector<std::string> words) {
     Update upd = Update(table_name, cols, vals, wheres);
     return upd;
 
+}
+Drop  parse_drop(const std::vector<std::string> &words) {
+    std::vector<std::string> cols;
+    int i = 1;
+    while (words[i] != "FROM") {
+        cols.push_back(words[i]);
+        i++;
+    }
+    i++;
+    std::string table_name = words[i];
+    std::cout << "Table name " << table_name << "\n";
+    i++;
+    std::vector<Where> wheres;
+    if (words.size() > i && words[i] == "WHERE") {
+        while (words.size() > i + 3) {
+            i++;
+            std::string where_token = words[i];
+            std::cout << "WHERE token " << where_token << "\n";
+            std::string col = words[i];
+            TableOperator tableOperator = table_operator_from_string(words[++i]);
+            std::string val = words[++i];
+            WhereOperator whereOperator = WhereOperator::NONE;
+            if (words.size() > i + 1) {
+                whereOperator = where_operator_from_string(words[++i]);
+            }
+            wheres.push_back(
+                    Where(col,
+                          tableOperator,
+                          val,
+                          whereOperator
+                    )
+            );
+        }
+    }
+    Drop query = Drop(
+            cols, table_name, wheres
+    );
+    return query;
 }

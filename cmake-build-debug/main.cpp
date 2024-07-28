@@ -401,219 +401,243 @@ int handle_update(Update &upd) {
     return rows_affected;
 
 }
+//preliminary version of drop handler
+void handle_drop(const Drop  &drop) {
+    Table data_table = read_data(std::string(drop.table_name));
+    TableDefinition td = get_table_definition(drop.table_name);
+
+    int row_count = data_table.data[data_table.columns[0]].size();
+    for (
+            int current_row = 0;
+            current_row < row_count;
+            current_row++) {
+        bool select_row = resolve_wheres(drop.wheres, data_table, td, current_row);
+
+        if (select_row) {
 
 
-int main() {
-    while (true) {
-        std::cout << "podaj komende" << std::endl;
-        std::string input;
-        std::getline(std::cin, input);
+        }
+        save_data(data_table);
+    }
+}
+
+
+    int main() {
+        while (true) {
+            std::cout << "podaj komende" << std::endl;
+            std::string input;
+            std::getline(std::cin, input);
 
 
 
-        //przykładowe inputy
-        // std::string select = "SELECT Col1 Col2 FROM table WHERE Col4 > 4 AND Col3 != 4";
-        // std::string create = "CREATE table1 imie String nazwisko String wiek Integer";
-        // std::string insert = "INSERT imie Jacek nazwisko Nowak wiek 12 INTO table1";
-        // std::string update = "UPDATE imie Andzrej IN table1 WHERE imie = Jacek";
+            //przykładowe inputy
+            // std::string select = "SELECT Col1 Col2 FROM table WHERE Col4 > 4 AND Col3 != 4";
+            // std::string create = "CREATE table1 imie String nazwisko String wiek Integer";
+            // std::string insert = "INSERT imie Jacek nazwisko Nowak wiek 12 INTO table1";
+            // std::string update = "UPDATE imie Andzrej IN table1 WHERE imie = Jacek";
 
-        //std::vector<std::string> tokens = tokenize(select);
-        //std::cout << tokens[0] << "\n";
-        std::vector<std::string> tokens = tokenize(input);
-        std::cout << tokens[0] << "\n";
+            //std::vector<std::string> tokens = tokenize(select);
+            //std::cout << tokens[0] << "\n";
+            std::vector<std::string> tokens = tokenize(input);
+            std::cout << tokens[0] << "\n";
 
-        if (tokens[0] == "SELECT") {
-            Select query = parse_select(tokens);
-            auto data = handle_query(query);
-            for (int i = 0; i < data.size(); i++) {
-                for (int j = 0; j < data[i].size(); j++) {
-                    std::cout << data[i][j] << " ";
+            if (tokens[0] == "SELECT") {
+                Select query = parse_select(tokens);
+                auto data = handle_query(query);
+                for (int i = 0; i < data.size(); i++) {
+                    for (int j = 0; j < data[i].size(); j++) {
+                        std::cout << data[i][j] << " ";
+                    }
+                    std::cout << "\n";
                 }
-                std::cout << "\n";
+
             }
+            if (tokens[0] == "CREATE") {
+                TableDefinition cr = parse_create(tokens);
+                create_handler(cr);
 
-        }
-        if (tokens[0] == "CREATE") {
-            TableDefinition cr = parse_create(tokens);
-            create_handler(cr);
-
-        }
-        if (tokens[0] == "INSERT") {
-            Insert ins = parse_insert(tokens);
-            handle_insert(ins);
-        }
-        if (tokens[0] == "UPDATE") {
-            Update upd = parse_update(tokens);
-            int rows_affected = handle_update(upd);
-        }
-    }
-
-    return 0;
-}
-
-
-Select parse_select(const std::vector<std::string> &words) {
-    std::vector<std::string> cols;
-    int i = 1;
-    while (words[i] != "FROM") {
-        cols.push_back(words[i]);
-        i++;
-    }
-    i++;
-    std::string table_name = words[i];
-    std::cout << "Table name " << table_name << "\n";
-    i++;
-    std::vector<Where> wheres;
-    if (words.size() > i && words[i] == "WHERE") {
-        while (words.size() > i + 3) {
-            i++;
-            std::string where_token = words[i];
-            std::cout << "WHERE token " << where_token << "\n";
-            std::string col = words[i];
-            TableOperator tableOperator = table_operator_from_string(words[++i]);
-            std::string val = words[++i];
-            WhereOperator whereOperator = WhereOperator::NONE;
-            if (words.size() > i + 1) {
-                whereOperator = where_operator_from_string(words[++i]);
             }
-            wheres.push_back(
-                    Where(col,
-                          tableOperator,
-                          val,
-                          whereOperator
-                    )
-            );
-
+            if (tokens[0] == "INSERT") {
+                Insert ins = parse_insert(tokens);
+                handle_insert(ins);
+            }
+            if (tokens[0] == "UPDATE") {
+                Update upd = parse_update(tokens);
+                int rows_affected = handle_update(upd);
+            }
         }
 
-    }
-    Select query = Select(
-            cols, table_name, wheres
-    );
-    return query;
-}
-
-TableDefinition parse_create(const std::vector<std::string> &words1) {
-    int i = 1;
-    std::string table_name = words1[1];
-    i++;
-    std::map<std::string, TableColumn> table_data;
-    for (i; i < words1.size(); i++) {
-        std::string col_name = words1[i];
-        i++;
-        //conwesja co drugiego słowa na typ
-        TableDataType col_type;
-        if (words1[i] == "String") {
-            col_type = TableDataType::String;
-        } else if (words1[i] == "Integer") {
-            col_type = TableDataType::Integer;
-        } else if (words1[i] == "Float") {
-            col_type = TableDataType::Float;
-        } else {
-            std::cout << "wprowadzono niepoprawny typ" << std::endl;
-        }
-        table_data[col_name] = TableColumn(col_name, col_type);
+        return 0;
     }
 
-    return TableDefinition(
-            table_name,
-            table_data
-    );
-}
 
-Insert parse_insert(const std::vector<std::string> &words) {
-    //words[0]=INSERT
-    std::vector<std::string> cols;
-    std::vector<std::string> vals;
-
-    for (int i = 1; words[i] != "INTO"; i += 2) {
-        cols.push_back(words[i]);
-        vals.push_back(words[i + 1]);
-
-    }
-    std::string table_name = words[words.size() - 1];
-
-    Insert ins = Insert(table_name, cols, vals);
-    return ins;
-}
-
-Update parse_update(std::vector<std::string> words) {
-    std::vector<std::string> cols;
-    std::vector<std::string> vals;
-    int i = 1;
-    for (; words[i] != "IN"; i++) {
-        if (i % 2 == 1) {
+    Select parse_select(const std::vector<std::string> &words) {
+        std::vector<std::string> cols;
+        int i = 1;
+        while (words[i] != "FROM") {
             cols.push_back(words[i]);
-        } else {
-            vals.push_back(words[i]);
-        }
-    }
-    i++;
-    std::string table_name = words[i];
-    i++;
-    std::vector<Where> wheres;
-    if (words.size() > i && words[i] == "WHERE") {
-        while (words.size() > i + 3) {
             i++;
-            std::string where_token = words[i];
-            std::cout << "WHERE token " << where_token << "\n";
-            std::string col = words[i];
-            TableOperator tableOperator = table_operator_from_string(words[++i]);
-            std::string val = words[++i];
-            WhereOperator whereOperator = WhereOperator::NONE;
-            if (words.size() > i + 1) {
-                whereOperator = where_operator_from_string(words[++i]);
-            }
-            wheres.push_back(
-                    Where(col,
-                          tableOperator,
-                          val,
-                          whereOperator
-                    )
-            );
-
         }
-
-    }
-    Update upd = Update(table_name, cols, vals, wheres);
-    return upd;
-
-}
-Drop  parse_drop(const std::vector<std::string> &words) {
-    std::vector<std::string> cols;
-    int i = 1;
-    while (words[i] != "FROM") {
-        cols.push_back(words[i]);
         i++;
-    }
-    i++;
-    std::string table_name = words[i];
-    std::cout << "Table name " << table_name << "\n";
-    i++;
-    std::vector<Where> wheres;
-    if (words.size() > i && words[i] == "WHERE") {
-        while (words.size() > i + 3) {
-            i++;
-            std::string where_token = words[i];
-            std::cout << "WHERE token " << where_token << "\n";
-            std::string col = words[i];
-            TableOperator tableOperator = table_operator_from_string(words[++i]);
-            std::string val = words[++i];
-            WhereOperator whereOperator = WhereOperator::NONE;
-            if (words.size() > i + 1) {
-                whereOperator = where_operator_from_string(words[++i]);
+        std::string table_name = words[i];
+        std::cout << "Table name " << table_name << "\n";
+        i++;
+        std::vector<Where> wheres;
+        if (words.size() > i && words[i] == "WHERE") {
+            while (words.size() > i + 3) {
+                i++;
+                std::string where_token = words[i];
+                std::cout << "WHERE token " << where_token << "\n";
+                std::string col = words[i];
+                TableOperator tableOperator = table_operator_from_string(words[++i]);
+                std::string val = words[++i];
+                WhereOperator whereOperator = WhereOperator::NONE;
+                if (words.size() > i + 1) {
+                    whereOperator = where_operator_from_string(words[++i]);
+                }
+                wheres.push_back(
+                        Where(col,
+                              tableOperator,
+                              val,
+                              whereOperator
+                        )
+                );
+
             }
-            wheres.push_back(
-                    Where(col,
-                          tableOperator,
-                          val,
-                          whereOperator
-                    )
-            );
+
         }
+        Select query = Select(
+                cols, table_name, wheres
+        );
+        return query;
     }
-    Drop query = Drop(
-            cols, table_name, wheres
-    );
-    return query;
-}
+
+    TableDefinition parse_create(const std::vector<std::string> &words1) {
+        int i = 1;
+        std::string table_name = words1[1];
+        i++;
+        std::map<std::string, TableColumn> table_data;
+        for (i; i < words1.size(); i++) {
+            std::string col_name = words1[i];
+            i++;
+            //conwesja co drugiego słowa na typ
+            TableDataType col_type;
+            if (words1[i] == "String") {
+                col_type = TableDataType::String;
+            } else if (words1[i] == "Integer") {
+                col_type = TableDataType::Integer;
+            } else if (words1[i] == "Float") {
+                col_type = TableDataType::Float;
+            } else {
+                std::cout << "wprowadzono niepoprawny typ" << std::endl;
+            }
+            table_data[col_name] = TableColumn(col_name, col_type);
+        }
+
+        return TableDefinition(
+                table_name,
+                table_data
+        );
+    }
+
+    Insert parse_insert(const std::vector<std::string> &words) {
+        //words[0]=INSERT
+        std::vector<std::string> cols;
+        std::vector<std::string> vals;
+
+        for (int i = 1; words[i] != "INTO"; i += 2) {
+            cols.push_back(words[i]);
+            vals.push_back(words[i + 1]);
+
+        }
+        std::string table_name = words[words.size() - 1];
+
+        Insert ins = Insert(table_name, cols, vals);
+        return ins;
+    }
+
+    Update parse_update(std::vector<std::string> words) {
+        std::vector<std::string> cols;
+        std::vector<std::string> vals;
+        int i = 1;
+        for (; words[i] != "IN"; i++) {
+            if (i % 2 == 1) {
+                cols.push_back(words[i]);
+            } else {
+                vals.push_back(words[i]);
+            }
+        }
+        i++;
+        std::string table_name = words[i];
+        i++;
+        std::vector<Where> wheres;
+        if (words.size() > i && words[i] == "WHERE") {
+            while (words.size() > i + 3) {
+                i++;
+                std::string where_token = words[i];
+                std::cout << "WHERE token " << where_token << "\n";
+                std::string col = words[i];
+                TableOperator tableOperator = table_operator_from_string(words[++i]);
+                std::string val = words[++i];
+                WhereOperator whereOperator = WhereOperator::NONE;
+                if (words.size() > i + 1) {
+                    whereOperator = where_operator_from_string(words[++i]);
+                }
+                wheres.push_back(
+                        Where(col,
+                              tableOperator,
+                              val,
+                              whereOperator
+                        )
+                );
+
+            }
+
+        }
+        Update upd = Update(table_name, cols, vals, wheres);
+        return upd;
+
+    }
+    Drop parse_drop(const std::vector<std::string> &words) {
+        std::vector<std::string> cols;
+        int i = 1;
+        while (words[i] != "FROM") {
+            cols.push_back(words[i]);
+            i++;
+        }
+        i++;
+        std::string table_name = words[i];
+        std::cout << "Table name " << table_name << "\n";
+        i++;
+        std::vector<Where> wheres;
+        if (words.size() > i && words[i] == "WHERE") {
+            while (words.size() > i + 3) {
+                i++;
+                std::string where_token = words[i];
+                std::cout << "WHERE token " << where_token << "\n";
+                std::string col = words[i];
+                TableOperator tableOperator = table_operator_from_string(words[++i]);
+                std::string val = words[++i];
+                WhereOperator whereOperator = WhereOperator::NONE;
+                if (words.size() > i + 1) {
+                    whereOperator = where_operator_from_string(words[++i]);
+                }
+                wheres.push_back(
+                        Where(col,
+                              tableOperator,
+                              val,
+                              whereOperator
+                        )
+                );
+            }
+        }
+        Drop query = Drop(
+                cols, table_name, wheres
+        );
+        return query;
+    }
+
+
+    //TASKS
+    // Refine the "drop" function
+    //Proprly implement the String data type
